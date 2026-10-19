@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#252a31">
+<title>Connexion administrateur | JEEP</title>
+<style>
+:root{color-scheme:light;--ink:#20252c;--muted:#737b86;--line:#e2e5e9;--bg:#f3f4f6;--white:#fff;--accent:#292f37}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink)}body{min-height:100vh;background:linear-gradient(145deg,#e8eaed,#f8f9fa 55%,#e7e9ec);display:grid;place-items:center;padding:22px}
+.wrap{width:100%;max-width:420px}.brand{display:flex;align-items:center;justify-content:center;gap:10px;margin:0 auto 22px}.mark{width:48px;height:48px;border-radius:15px;background:#282e36;color:#fff;display:grid;place-items:center;font-weight:900;font-size:20px;letter-spacing:-1px;box-shadow:0 8px 20px #171b2220}.brandname{font-weight:850;font-size:20px;letter-spacing:2px}.brandname small{display:block;font-size:10px;letter-spacing:2.2px;color:var(--muted);font-weight:700;margin-top:2px}
+.panel{background:var(--white);border:1px solid #ffffff;box-shadow:0 18px 55px #20252c12;border-radius:24px;padding:28px 23px}.eyebrow{font-size:11px;letter-spacing:1.8px;font-weight:800;color:#777f89;text-transform:uppercase}.title{font-size:27px;line-height:1.2;margin:9px 0 8px;letter-spacing:-.8px}.desc{font-size:14px;color:var(--muted);line-height:1.55;margin:0 0 25px}
+label{display:block;font-size:13px;font-weight:750;margin:16px 0 8px}.field{width:100%;min-height:49px;border:1px solid var(--line);border-radius:13px;background:#fbfbfc;padding:0 14px;font:inherit;font-size:15px;color:var(--ink);outline:none}.field:focus{border-color:#6b737e;box-shadow:0 0 0 3px #7e87921b}.row{display:grid;grid-template-columns:112px 1fr;gap:9px}.hint{font-size:11px;color:var(--muted);line-height:1.5;margin-top:8px}.btn{border:0;border-radius:13px;background:#282e36;color:white;font-weight:800;font-size:15px;width:100%;min-height:51px;margin-top:23px;cursor:pointer}.btn:disabled{opacity:.65;cursor:wait}.notice{display:none;border-radius:12px;padding:11px 12px;margin-top:16px;font-size:13px;line-height:1.45}.notice.error{display:block;background:#fff0f0;color:#a52c2c;border:1px solid #ffdada}.notice.info{display:block;background:#f0f3f6;color:#424a55;border:1px solid #e1e5e9}.foot{text-align:center;color:#777f89;font-size:11px;line-height:1.6;margin:17px 12px 0}.shield{display:inline-flex;align-items:center;gap:6px;color:#606975;font-size:12px;margin-top:17px}.shield svg{width:15px;height:15px}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <div class="brand"><div class="mark">J</div><div class="brandname">JEEP<small>ESPACE ADMINISTRATEUR</small></div></div>
+  <section class="panel">
+    <div class="eyebrow">Accès sécurisé</div>
+    <h1 class="title">Connexion administrateur</h1>
+    <p class="desc">Connectez-vous avec le numéro et le mot de passe de votre compte JEEP administrateur.</p>
+    <form id="loginForm" autocomplete="on">
+      <label for="country">Pays du compte</label>
+      <select id="country" class="field" required>
+        <option value="BF">Burkina Faso (+226)</option>
+        <option value="TG">Togo (+228)</option>
+        <option value="CI">Côte d’Ivoire (+225)</option>
+      </select>
+      <label for="phone">Numéro de téléphone</label>
+      <div class="row">
+        <input id="prefix" class="field" value="+226" aria-label="Indicatif du pays" readonly>
+        <input id="phone" class="field" inputmode="numeric" autocomplete="username" placeholder="Votre numéro" required maxlength="10">
+      </div>
+      <label for="password">Mot de passe</label>
+      <input id="password" class="field" type="password" autocomplete="current-password" placeholder="Mot de passe du compte" required minlength="8" maxlength="128">
+      <button id="submitBtn" class="btn" type="submit">Se connecter</button>
+      <div id="notice" class="notice" role="alert" aria-live="polite"></div>
+    </form>
+    <div class="shield"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11Z"/><path d="m9 12 2 2 4-4"/></svg> Le serveur vérifie le rôle administrateur.</div>
+  </section>
+  <p class="foot">JEEP · Espace réservé au personnel autorisé<br>Ne partagez jamais votre mot de passe.</p>
+</main>
+<script>
+(() => {
+  const API = "https://nayyovsuollsdvxtslmb.supabase.co/functions/v1/jeep-api";
+  const $ = id => document.getElementById(id);
+  const prefixes = { BF: "+226", TG: "+228", CI: "+225" };
+  const lengths = { BF: 8, TG: 8, CI: 10 };
+  const country = $("country");
+  const phone = $("phone");
+  const prefix = $("prefix");
+  const button = $("submitBtn");
+  const notice = $("notice");
+  country.addEventListener("change", () => {
+    prefix.value = prefixes[country.value];
+    phone.maxLength = lengths[country.value];
+    phone.value = "";
+    phone.placeholder = lengths[country.value] + " chiffres";
+  });
+  function show(message, kind="error") {
+    notice.className = "notice " + kind;
+    notice.textContent = message;
+  }
+  function explain(code) {
+    const messages = {
+      INVALID_CREDENTIALS: "Numéro, pays ou mot de passe incorrect.",
+      TOO_MANY_ATTEMPTS_TRY_LATER: "Trop de tentatives. Réessayez dans 15 minutes.",
+      SESSION_CREATION_FAILED: "La session n’a pas pu être créée. Réessayez.",
+      REQUEST_FAILED: "La connexion a échoué. Vérifiez vos informations."
+    };
+    return messages[code] || "Connexion impossible (" + code + ").";
+  }
+  $("loginForm").addEventListener("submit", async event => {
+    event.preventDefault();
+    const selectedCountry = country.value;
+    const selectedPhone = phone.value.trim();
+    const password = $("password").value;
+    if (!new RegExp("^\\\\d{" + lengths[selectedCountry] + "}$").test(selectedPhone)) {
+      show("Saisissez un numéro de " + lengths[selectedCountry] + " chiffres, sans indicatif.");
+      return;
+    }
+    button.disabled = true;
+    button.textContent = "Vérification…";
+    notice.className = "notice";
+    try {
+      const response = await fetch(API, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "login", country: selectedCountry, phone: selectedPhone, password })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.ok || !data.session_token || !data.user) {
+        show(explain(data.error || "REQUEST_FAILED"));
+        return;
+      }
+      if (data.user.role !== "admin") {
+        // Ne jamais conserver la session d'un compte utilisateur standard.
+        try {
+          await fetch(API, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "logout", session_token: data.session_token })
+          });
+        } catch (_) {}
+        show("Ce compte n’a pas les droits administrateur. Accès refusé.");
+        return;
+      }
+      sessionStorage.setItem("jeep_session_token", data.session_token);
+      sessionStorage.setItem("jeep_user_id", data.user.id || "");
+      sessionStorage.setItem("jeep_user_country", data.user.country || selectedCountry);
+      sessionStorage.setItem("jeep_user_role", data.user.role);
+      show("Connexion validée. Ouverture de la messagerie…", "info");
+      window.location.replace("admin-messages.html");
+    } catch (_) {
+      show("Impossible de joindre le serveur. Vérifiez votre connexion Internet puis réessayez.");
+    } finally {
+      button.disabled = false;
+      button.textContent = "Se connecter";
+    }
+  });
+})();
+</script>
+</body>
+</html>
