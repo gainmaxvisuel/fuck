@@ -76,9 +76,10 @@ label{display:block;font-size:13px;font-weight:750;margin:16px 0 8px}.field{widt
     const selectedCountry = country.value;
     const selectedPhone = phone.value.trim();
     const password = $("password").value;
-    if (!new RegExp("^\\\\d{" + lengths[selectedCountry] + "}$").test(selectedPhone)) {
-      show("Saisissez un numéro de " + lengths[selectedCountry] + " chiffres, sans indicatif.");
-      return;
+    
+if (!new RegExp("^\\d{" + lengths[selectedCountry] + "}$").test(selectedPhone)) {
+  show("Saisissez un numéro de " + lengths[selectedCountry] + " chiffres, sans indicatif.");
+  return;
     }
     button.disabled = true;
     button.textContent = "Vérification…";
